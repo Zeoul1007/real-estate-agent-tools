@@ -4,28 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real Estate Agent Tools</title>
+    
+    <!-- Bootstrap for Styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #f8f9fa; /* Light background */
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .btn-custom {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Real Estate Agent Assistant</h1>
+    <div class="container">
+        <h1 class="mb-4">Real Estate Agent Assistant</h1>
 
-    <!-- ChatGPT AI Assistant -->
-    <h2>Chat with AI</h2>
-    <a href="https://chatgpt.com/g/g-67b170b3c090819199488bbe27144ada-realestate-ai" target="_blank">
-        💬 Open ChatGPT Assistant
-    </a>
+        <!-- Open RealEstate AI -->
+        <div class="box">
+            <h2>Open RealEstate AI</h2>
+            <p>Click below to chat with AI about market trends, reports, and more.</p>
+            <a href="https://chatgpt.com/g/g-67b170b3c090819199488bbe27144ada-realestate-ai" target="_blank" class="btn btn-primary btn-custom">
+                💬 Open RealEstate AI
+            </a>
+            <p class="mt-2"><small>Chat opens in a new tab. <a href="#" onclick="window.location.reload();">Return to Web App</a></small></p>
+        </div>
 
-    <!-- Calendar Scheduling -->
-    <h2>Schedule an Appointment</h2>
-    <input type="text" id="calendarEvent" placeholder="Schedule: Meeting with Tom at 2PM">
-    <button onclick="scheduleEvent()">Schedule</button>
-    <p id="calendarResponse"></p>
+        <!-- Calendar Scheduling -->
+        <div class="box">
+            <h2>Schedule an Appointment</h2>
+            <input type="text" id="calendarEvent" class="form-control" placeholder="Enter event (e.g., Meeting with Tom at 2PM)">
+            <button class="btn btn-success btn-custom" onclick="scheduleEvent()">📅 Schedule</button>
+            <p id="calendarResponse"></p>
+        </div>
 
-    <!-- Google Maps -->
-    <h2>Get Directions</h2>
-    <input type="text" id="mapQuery" placeholder="Enter an address...">
-    <button onclick="getDirections()">Get Directions</button>
-    <p id="mapResponse"></p>
+        <!-- Google Maps -->
+        <div class="box">
+            <h2>Get Directions</h2>
+            <input type="text" id="mapQuery" class="form-control" placeholder="Enter an address">
+            <button class="btn btn-warning btn-custom" onclick="getDirections()">📍 Get Directions</button>
+            <p id="mapResponse"></p>
+        </div>
+    </div>
 
+    <!-- Scripts -->
     <script>
         // ✅ Calendar API - Generates Google Calendar Links
         async function scheduleEvent() {
@@ -41,8 +78,7 @@
 
                 const data = await response.json();
                 responseBox.innerHTML = `
-                    <a href="${data.google_calendar_url}" target="_blank">📅 Add to Google Calendar</a><br>
-                    <a href="${data.apple_calendar_url}" target="_blank">📅 Add to Apple Calendar</a>
+                    <a href="${data.google_calendar_url}" target="_blank">📅 Add to Google Calendar</a>
                 `;
             } catch (error) {
                 responseBox.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
@@ -56,8 +92,9 @@
             document.getElementById("mapResponse").innerHTML = `<a href="${mapUrl}" target="_blank">📍 Open in Google Maps</a>`;
         }
     </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
 
