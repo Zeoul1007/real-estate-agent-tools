@@ -7,12 +7,12 @@
     
     <!-- Bootstrap for Styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script> <!-- Replace with your FontAwesome kit ID -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> <!-- ✅ Fixed FontAwesome -->
 
     <style>
         /* Background Gradient */
         body {
-            background: linear-gradient(to right, #b3e5fc, #e3f2fd); /* Light blue gradient */
+            background: linear-gradient(to right, #b3e5fc, #e3f2fd);
             font-family: Arial, sans-serif;
         }
 
@@ -30,7 +30,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px; /* Adds space between sections */
+            margin-bottom: 25px;
         }
 
         /* Custom Button Styling */
@@ -88,31 +88,37 @@
 
     <!-- Scripts -->
     <script>
-        const apiKey = "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"; // Replace with your OpenAI API key
+        const apiKey = "sk-proj-..."; // 🔴 Replace with your actual OpenAI API key
 
         async function parseInputWithAI(input) {
-            const prompt = `Extract the event details or address from the following input and return them in JSON format. If it's a calendar request, include title, date, time, and location. If it's a directions request, include the address.
-Input: "${input}"
-Output: { "type": "calendar" | "directions", "title": "Event title", "date": "YYYY-MM-DD", "time": "HH:MM", "location": "Event location", "address": "Address for directions" }`;
+            const prompt = `Extract the details from this request: "${input}". 
+            If it's a calendar request, return: { "type": "calendar", "title": "Event title", "date": "YYYY-MM-DD", "time": "HH:MM", "location": "Event location" }.
+            If it's a directions request, return: { "type": "directions", "address": "Address for directions" }.
+            Respond only in JSON format.`;
 
             try {
-                const response = await fetch("https://api.openai.com/v1/completions", {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: "text-davinci-003", // Use the appropriate model
-                        prompt: prompt,
-                        max_tokens: 100,
+                        model: "gpt-4-turbo", // ✅ Using latest model
+                        messages: [{ role: "system", content: prompt }], // ✅ Using correct format
+                        max_tokens: 150,
                         temperature: 0
                     })
                 });
 
                 const data = await response.json();
-                const output = data.choices[0].text.trim();
-                return JSON.parse(output);
+                console.log("AI Response:", data); // ✅ Debugging
+
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error("Invalid AI response format");
+                }
+
+                return JSON.parse(data.choices[0].message.content);
             } catch (error) {
                 console.error("Error parsing input with AI:", error);
                 return null;
@@ -120,15 +126,15 @@ Output: { "type": "calendar" | "directions", "title": "Event title", "date": "YY
         }
 
         function generateGoogleCalendarLink(event) {
-            const startTime = new Date(`${event.date}T${event.time}:00Z`).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            const endTime = new Date(new Date(`${event.date}T${event.time}:00Z`).getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour later
+            const startTime = `${event.date}T${event.time.replace(":", "")}00Z`;
+            const endTime = `${event.date}T${(parseInt(event.time.split(":")[0]) + 1).toString().padStart(2, "0")}${event.time.split(":")[1]}00Z`;
 
             return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime}/${endTime}&location=${encodeURIComponent(event.location)}`;
         }
 
         function generateICSFile(event) {
-            const startTime = new Date(`${event.date}T${event.time}:00Z`).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            const endTime = new Date(new Date(`${event.date}T${event.time}:00Z`).getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour later
+            const startTime = `${event.date}T${event.time.replace(":", "")}00Z`;
+            const endTime = `${event.date}T${(parseInt(event.time.split(":")[0]) + 1).toString().padStart(2, "0")}${event.time.split(":")[1]}00Z`;
 
             const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -157,42 +163,31 @@ END:VCALENDAR`;
             }
 
             try {
-                // Parse input using AI
                 const parsedData = await parseInputWithAI(input);
                 if (!parsedData) {
                     throw new Error("Could not parse input.");
                 }
 
-                // Generate and open the appropriate link
                 if (parsedData.type === "calendar") {
                     const googleLink = generateGoogleCalendarLink(parsedData);
                     const icsLink = generateICSFile(parsedData);
 
-                    // Display links
                     responseBox.innerHTML = `
                         <p>✅ Event Created!</p>
                         <a href="${googleLink}" target="_blank">📅 Add to Google Calendar</a><br>
                         <a href="${icsLink}" download="event.ics">🍏 Download for Apple Calendar</a>
                     `;
 
-                    // Automatically open Google Calendar in a new tab
                     window.open(googleLink, "_blank");
                 } else if (parsedData.type === "directions") {
                     const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(parsedData.address)}`;
-
-                    // Display link
-                    responseBox.innerHTML = `
-                        <p>✅ Directions Created!</p>
-                        <a href="${mapUrl}" target="_blank">📍 Open in Google Maps</a>
-                    `;
-
-                    // Automatically open Google Maps in a new tab
+                    responseBox.innerHTML = `<p>✅ Directions Created!</p><a href="${mapUrl}" target="_blank">📍 Open in Google Maps</a>`;
                     window.open(mapUrl, "_blank");
                 } else {
                     throw new Error("Invalid request type.");
                 }
             } catch (error) {
-                responseBox.innerHTML = `<p class="text-danger">❌ Error: Could not process your request. Please check your input.</p>`;
+                responseBox.innerHTML = `<p class="text-danger">❌ Error: Could not process your request.</p>`;
                 console.error(error);
             }
         }
