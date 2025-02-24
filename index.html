@@ -1,74 +1,88 @@
-import os
-from flask import Flask, request, jsonify, Response
-import requests
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Agent Tools</title>
+</head>
+<body>
+    <h1>Real Estate Agent Assistant</h1>
 
-app = Flask(__name__)
+    <!-- GPT AI Assistant -->
+    <h2>Ask the AI</h2>
+    <input type="text" id="realEstateGPT" placeholder="Ask about reports, social feeds...">
+    <button onclick="askGPT()">Ask</button>
+    <p id="aiResponse"></p>
 
-# ✅ Get API Key securely from Railway environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    <!-- Calendar Scheduling -->
+    <h2>Schedule an Appointment</h2>
+    <input type="text" id="calendarEvent" placeholder="Schedule: Meeting with Tom at 2PM">
+    <button onclick="scheduleEvent()">Schedule</button>
+    <p id="calendarResponse"></p>
 
-# ✅ Root URL to check if API is running
-@app.route('/')
-def home():
-    return "✅ API is running!"
+    <!-- Google Maps -->
+    <h2>Get Directions</h2>
+    <input type="text" id="mapQuery" placeholder="Enter an address...">
+    <button onclick="getDirections()">Get Directions</button>
+    <p id="mapResponse"></p>
 
-# ✅ AI Assistant - Uses OpenAI API
-@app.route('/ask-gpt', methods=['POST'])
-def ask_gpt():
-    data = request.json
-    user_input = data.get("query", "")
+    <script>
+        // ✅ AI Assistant - Connects to Railway API
+        async function askGPT() {
+            const query = document.getElementById("realEstateGPT").value;
+            const responseBox = document.getElementById("aiResponse");
 
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
+            try {
+                const response = await fetch("https://real-estate-agent-tools-production.up.railway.app/ask-gpt", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ query: query })
+                });
 
-    payload = {
-        "model": "gpt-4-turbo",  # Change this if using a custom fine-tuned model
-        "messages": [{"role": "user", "content": user_input}]
-    }
+                if (!response.ok) {
+                    throw new Error("Failed to fetch AI response.");
+                }
 
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    return response.json()
+                const data = await response.json();
+                responseBox.innerText = data.choices[0].message.content;
+            } catch (error) {
+                responseBox.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+            }
+        }
 
-# ✅ Calendar Scheduling - Generates Google Calendar Links
-@app.route('/generate-calendar-link', methods=['GET'])
-def generate_calendar_link():
-    event = request.args.get('event', 'Meeting with Client')
-    google_calendar_url = (
-        f"https://calendar.google.com/calendar/render?action=TEMPLATE"
-        f"&text={event.replace(' ', '+')}"
-    )
+        // ✅ Calendar API - Connects to Railway backend
+        async function scheduleEvent() {
+            const query = document.getElementById("calendarEvent").value;
+            const responseBox = document.getElementById("calendarResponse");
 
-    return jsonify({
-        "google_calendar_url": google_calendar_url
-    })
+            try {
+                const response = await fetch("https://real-estate-agent-tools-production.up.railway.app/generate-calendar-link?event=" + encodeURIComponent(query));
 
-# ✅ Apple Calendar Support - Generates .ics Files
-@app.route('/download-ics', methods=['GET'])
-def download_ics():
-    event = request.args.get('event', 'Meeting with Client')
-    location = request.args.get('location', 'Office')
-    start_time = "20240301T140000Z"
-    end_time = "20240301T150000Z"
+                if (!response.ok) {
+                    throw new Error("Failed to fetch calendar links.");
+                }
 
-    ics_content = f"""BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-SUMMARY:{event}
-DTSTART:{start_time}
-DTEND:{end_time}
-LOCATION:{location}
-DESCRIPTION:Meeting scheduled via Real Estate Agent Tools.
-END:VEVENT
-END:VCALENDAR"""
+                const data = await response.json();
+                responseBox.innerHTML = `
+                    <a href="${data.google_calendar_url}" target="_blank">📅 Add to Google Calendar</a><br>
+                    <a href="${data.apple_calendar_url}" target="_blank">📅 Add to Apple Calendar</a>
+                `;
+            } catch (error) {
+                responseBox.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+            }
+        }
 
-    response = Response(ics_content, mimetype="text/calendar")
-    response.headers["Content-Disposition"] = "attachment; filename=event.ics"
-    return response
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+        // ✅ Google Maps Directions - Already working!
+        function getDirections() {
+            const address = document.getElementById("mapQuery").value;
+            const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
+            document.getElementById("mapResponse").innerHTML = `<a href="${mapUrl}" target="_blank">📍 Open in Google Maps</a>`;
+        }
+    </script>
+</body>
+</html>
 
 
 
