@@ -104,26 +104,37 @@
             let time = "1200";
             let location = "";
 
+            // Check if "tomorrow" is mentioned
             if (input.toLowerCase().includes("tomorrow")) {
                 date.setDate(date.getDate() + 1);
             }
 
-            const timeMatch = input.match(/\b\d{1,2}(:\d{2})?\s?(AM|PM|am|pm)?\b/);
+            // Extract time (supports 12-hour and 24-hour formats)
+            const timeMatch = input.match(/\b(\d{1,2}(:\d{2})?\s?(AM|PM|am|pm)?\b/);
             if (timeMatch) {
                 let extractedTime = timeMatch[0].toUpperCase();
                 let hour = parseInt(extractedTime);
-                if (extractedTime.includes("PM") && hour < 12) {
+                const isPM = extractedTime.includes("PM");
+
+                // Convert 12-hour format to 24-hour format
+                if (isPM && hour < 12) {
                     hour += 12;
+                } else if (!isPM && hour === 12) {
+                    hour = 0; // 12 AM is 00:00 in 24-hour format
                 }
+
+                // Format time as HHMM
                 time = `${hour.toString().padStart(2, "0")}00`;
             }
 
+            // Extract location
             const locationMatch = input.match(/at\s(.*)/i);
             if (locationMatch) {
                 location = locationMatch[1].trim();
                 location = location.replace(/(tomorrow|at \d{1,2}(?::\d{2})?\s?(AM|PM|am|pm)?)/gi, "").trim();
             }
 
+            // Extract title
             const titleMatch = input.match(/(meeting|showing|appointment)/i);
             if (titleMatch) {
                 title = titleMatch[0].charAt(0).toUpperCase() + titleMatch[0].slice(1);
@@ -168,19 +179,34 @@ END:VCALENDAR`;
             const input = document.getElementById("calendarEvent").value;
             const responseBox = document.getElementById("calendarResponse");
 
-            const event = parseInput(input);
-            const googleLink = generateGoogleCalendarLink(event);
-            const icsLink = generateICSFile(event);
+            if (!input) {
+                responseBox.innerHTML = `<p class="text-danger">❌ Please enter an event description.</p>`;
+                return;
+            }
 
-            responseBox.innerHTML = `
-                <p>✅ Event Created!</p>
-                <a href="${googleLink}" target="_blank">📅 Add to Google Calendar</a><br>
-                <a href="${icsLink}" download="event.ics">🍏 Download for Apple Calendar</a>
-            `;
+            try {
+                const event = parseInput(input);
+                const googleLink = generateGoogleCalendarLink(event);
+                const icsLink = generateICSFile(event);
+
+                responseBox.innerHTML = `
+                    <p>✅ Event Created!</p>
+                    <a href="${googleLink}" target="_blank">📅 Add to Google Calendar</a><br>
+                    <a href="${icsLink}" download="event.ics">🍏 Download for Apple Calendar</a>
+                `;
+            } catch (error) {
+                responseBox.innerHTML = `<p class="text-danger">❌ Error: Could not create event. Please check your input.</p>`;
+                console.error(error);
+            }
         }
 
         function getDirections() {
             const address = document.getElementById("mapQuery").value;
+            if (!address) {
+                document.getElementById("mapResponse").innerHTML = `<p class="text-danger">❌ Please enter an address.</p>`;
+                return;
+            }
+
             const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
             document.getElementById("mapResponse").innerHTML = `<a href="${mapUrl}" target="_blank">📍 Open in Google Maps</a>`;
         }
