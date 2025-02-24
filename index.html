@@ -10,7 +10,7 @@
     
     <style>
         body {
-            background-color: #f8f9fa; /* Light background */
+            background-color: #f8f9fa;
         }
         .container {
             max-width: 600px;
@@ -69,32 +69,38 @@
             let time = "1200";
             let location = "";
 
-            // Extract date
+            // ✅ Extract date (supports "tomorrow")
             if (input.toLowerCase().includes("tomorrow")) {
                 date.setDate(date.getDate() + 1);
             }
 
-            // Extract time (basic detection)
+            // ✅ Extract time (better detection of AM/PM times)
             const timeMatch = input.match(/\b\d{1,2}(?::\d{2})?\s?(AM|PM|am|pm)?\b/);
             if (timeMatch) {
-                let extractedTime = timeMatch[0];
-                if (extractedTime.toLowerCase().includes("pm") && parseInt(extractedTime) < 12) {
-                    time = (parseInt(extractedTime) + 12).toString() + "00";
-                } else {
-                    time = extractedTime.replace(/AM|PM|am|pm/, "") + "00";
+                let extractedTime = timeMatch[0].toUpperCase();
+                let hour = parseInt(extractedTime);
+                if (extractedTime.includes("PM") && hour < 12) {
+                    hour += 12;
                 }
+                time = `${hour.toString().padStart(2, "0")}00`; // Convert to HHMM format
+                date.setHours(hour, 0, 0, 0); // Set correct time on the date object
             }
 
-            // Extract location
-            const locationMatch = input.match(/at (.*)/);
+            // ✅ Extract location (ensures only address part)
+            const locationMatch = input.match(/at\s(.*)/i);
             if (locationMatch) {
-                location = locationMatch[1];
+                location = locationMatch[1].trim();
+                location = location.replace(/(tomorrow|at \d{1,2}(?::\d{2})?\s?(AM|PM|am|pm)?)/gi, "").trim();
             }
 
-            // Extract title
-            const titleMatch = input.match(/meeting|showing|appointment/i);
+            // ✅ Extract title (ensures it doesn't include extra details)
+            const titleMatch = input.match(/(meeting|showing|appointment)/i);
             if (titleMatch) {
-                title = titleMatch[0] + " with " + input.split("with ")[1]?.split(" at")[0];
+                title = titleMatch[0].charAt(0).toUpperCase() + titleMatch[0].slice(1);
+                const withMatch = input.match(/with\s([\w\s]+)/i);
+                if (withMatch) {
+                    title += " with " + withMatch[1].split(" at")[0].trim();
+                }
             }
 
             return { title, date, time, location };
@@ -104,28 +110,30 @@
             const startTime = event.date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
             const endTime = new Date(event.date.getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour later
 
-            return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime}/${endTime}&location=${encodeURIComponent(event.location)}`;
+            return `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTime}/${endTime}&details=&location=${encodeURIComponent(event.location)}`;
         }
 
         function generateICSFile(event) {
             const startTime = event.date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            const endTime = new Date(event.date.getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'; // 1 hour later
+            const endTime = new Date(event.date.getTime() + 3600000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            const uid = `${startTime}-001@realestateassistant.com`;
+            const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-            const icsContent = `
-BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Your App//EN
-BEGIN:VEVENT
-UID:${startTime}-001@yourapp.com
-DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'}
-DTSTART:${startTime}
-DTEND:${endTime}
-SUMMARY:${event.title}
-LOCATION:${event.location}
-DESCRIPTION:
-END:VEVENT
-END:VCALENDAR
-            `;
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Real Estate Agent Tools//NONSGML v1.0//EN',
+                'BEGIN:VEVENT',
+                `UID:${uid}`,
+                `DTSTAMP:${dtstamp}`,
+                `DTSTART:${startTime}`,
+                `DTEND:${endTime}`,
+                `SUMMARY:${event.title}`,
+                `LOCATION:${event.location}`,
+                'DESCRIPTION:Created with Real Estate Agent Tools',
+                'END:VEVENT',
+                'END:VCALENDAR',
+            ].join('\n');
 
             return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
         }
