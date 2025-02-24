@@ -1,18 +1,14 @@
 import os
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 import requests
+from flask_cors import CORS  # ✅ Import CORS
 
 app = Flask(__name__)
-
-# ✅ Get API Key securely from Railway environment variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# ✅ Root URL - Confirms the API is running
-@app.route('/')
-def home():
-    return "✅ API is running!"
+CORS(app)  # ✅ Enable CORS for all routes
 
 # ✅ AI Assistant - Uses OpenAI API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 @app.route('/ask-gpt', methods=['POST'])
 def ask_gpt():
     data = request.json
@@ -24,18 +20,18 @@ def ask_gpt():
     }
 
     payload = {
-        "model": "gpt-4-turbo",  # Change this if using a fine-tuned model
+        "model": "gpt-4-turbo",
         "messages": [{"role": "user", "content": user_input}]
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-
     return response.json()
 
 # ✅ Calendar Scheduling - Generates Google Calendar Links
 @app.route('/generate-calendar-link', methods=['GET'])
 def generate_calendar_link():
     event = request.args.get('event', 'Meeting with Client')
+
     google_calendar_url = (
         f"https://calendar.google.com/calendar/render?action=TEMPLATE"
         f"&text={event.replace(' ', '+')}"
