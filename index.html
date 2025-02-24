@@ -8,11 +8,11 @@
 <body>
     <h1>Real Estate Agent Assistant</h1>
 
-    <!-- GPT AI Assistant -->
-    <h2>Ask the AI</h2>
-    <input type="text" id="realEstateGPT" placeholder="Ask about reports, social feeds...">
-    <button onclick="askGPT()">Ask</button>
-    <p id="aiResponse"></p>
+    <!-- ChatGPT AI Assistant -->
+    <h2>Chat with AI</h2>
+    <a href="https://chatgpt.com/g/g-67b170b3c090819199488bbe27144ada-realestate-ai" target="_blank">
+        💬 Open ChatGPT Assistant
+    </a>
 
     <!-- Calendar Scheduling -->
     <h2>Schedule an Appointment</h2>
@@ -27,32 +27,7 @@
     <p id="mapResponse"></p>
 
     <script>
-        // ✅ AI Assistant - Connects to Railway API
-        async function askGPT() {
-            const query = document.getElementById("realEstateGPT").value;
-            const responseBox = document.getElementById("aiResponse");
-
-            try {
-                const response = await fetch("https://real-estate-agent-tools-production.up.railway.app/ask-gpt", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ query: query })
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch AI response.");
-                }
-
-                const data = await response.json();
-                responseBox.innerText = data.choices[0].message.content;
-            } catch (error) {
-                responseBox.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
-            }
-        }
-
-        // ✅ Calendar API - Connects to Railway backend
+        // ✅ Calendar API - Generates Google Calendar Links
         async function scheduleEvent() {
             const query = document.getElementById("calendarEvent").value;
             const responseBox = document.getElementById("calendarResponse");
@@ -74,7 +49,7 @@
             }
         }
 
-        // ✅ Google Maps Directions - Already working!
+        // ✅ Google Maps Directions - Generates Map Links
         function getDirections() {
             const address = document.getElementById("mapQuery").value;
             const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
